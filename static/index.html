@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Office Leave & Task Tracker</title>
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    body { margin: 0; background: #f3f6fb; color: #1f2937; }
+    header {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: white;
+      padding: 20px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    header h1 { margin: 0; font-size: 22px; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-disconnect {
+      background: #475569;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary { background: #2563eb; }
+    .btn-danger { background: #ef4444; padding: 5px 10px; font-size: 12px; }
+    .btn-small { padding: 5px 10px; font-size: 12px; }
+    .container {
+      max-width: 1120px;
+      margin: 28px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+      gap: 24px;
+    }
+    .lists-wrapper {
+      max-width: 1120px;
+      margin: 0 auto 36px auto;
+      padding: 0 16px;
+      display: none;
+    }
+    .lists-box {
+      background: white;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+      border-top: 4px solid #2563eb;
+    }
+    .lists-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    .lists-header h2 {
+      margin: 0;
+      color: #1e3a8a;
+      font-size: 19px;
+    }
+    .docs-link {
+      color: #2563eb;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+    .lists-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 24px;
+    }
+    .sub-list h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      color: #334155;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #1e3a8a;
+      font-size: 18px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 10px;
+    }
+    .form-row { display: flex; flex-direction: column; gap: 10px; }
+    .form-row input {
+      padding: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      background: #f9fafb;
+    }
+    .badge {
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .pending { background: #fef3c7; color: #92400e; }
+    .approved, .done { background: #d1fae5; color: #065f46; }
+    .rejected { background: #fee2e2; color: #991b1b; }
+    .actions { display: flex; gap: 6px; }
+    .custom-alert {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 14px 18px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+      border-left: 5px solid #10b981;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      max-width: 380px;
+    }
+    .custom-alert.error {
+      border-left-color: #ef4444;
+    }
+    .custom-alert button {
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    /* API Key Prompt Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+    .modal-card h3 {
+      margin: 0 0 8px 0;
+      color: #1e3a8a;
+      font-size: 18px;
+    }
+    .modal-card p {
+      margin: 0 0 16px 0;
+      color: #475569;
+      font-size: 14px;
+    }
+    .modal-card input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+        .password-field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .password-field-wrap input {
+      width: 100%;
+      padding: 10px 42px 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+    .eye-btn {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+    .eye-btn:hover {
+      color: #1e3a8a;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="customAlert" class="custom-alert" role="alert">
+    <span id="customAlertText"></span>
+    <button onclick="hideCustomAlert()" aria-label="Close alert">&times;</button>
+  </div>
+
+    <!-- API Key Prompt Modal -->
+  <div id="apiKeyModal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3>API Key Authentication</h3>
+      <p>Enter your X-API-Key to view Records &amp; Lists.</p>
+      <div class="password-field-wrap">
+        <input type="password" id="modalApiKeyInput" placeholder="Enter X-API-Key" />
+        <button type="button" class="eye-btn" onclick="toggleApiKeyVisibility()" aria-label="Show or hide API Key" title="Show / Hide API Key">
+          <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-disconnect" onclick="closeApiKeyModal()">Cancel</button>
+        <button class="btn" onclick="submitApiKeyModal()">Connect</button>
+      </div>
+    </div>
+  </div>
+
+
+  <header>
+    <div>
+      <h1>Office Leave &amp; Task Tracker</h1>
+    </div>
+    <div class="header-actions">
+      <button id="openRecordsBtn" class="btn" onclick="openApiKeyModal()">Records &amp; Lists</button>
+      <button id="disconnectRecordsBtn" class="btn-disconnect" onclick="disconnectKey()" style="display: none;">Disconnect</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Tasks Form Card -->
+    <div class="card">
+      <h2>Office Tasks</h2>
+      <div class="form-row">
+        <input type="text" id="taskTitle" placeholder="Task title (e.g., Prepare weekly report)" />
+        <input type="text" id="taskAssignee" placeholder="Assignee name" />
+        <button class="btn btn-primary" onclick="addTask()">+ Add Task</button>
+      </div>
+    </div>
+
+    <!-- Leaves Form Card -->
+    <div class="card">
+      <h2>Employee Leave Requests</h2>
+      <div class="form-row">
+        <input type="text" id="leaveEmp" placeholder="Employee name" />
+        <input type="date" id="leaveStart" />
+        <input type="date" id="leaveEnd" />
+        <input type="text" id="leaveReason" placeholder="Reason for leave" />
+        <button class="btn btn-primary" onclick="applyLeave()">+ Apply Leave</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Records & Lists Box (Shown only after Connect) -->
+  <div id="listsWrapper" class="lists-wrapper">
+    <div class="lists-box">
+      <div class="lists-header">
+        <h2>Records &amp; Lists</h2>
+        <a href="/docs" class="docs-link" target="_blank">Open API Swagger Docs (/docs)</a>
+      </div>
+
+      <div class="lists-grid">
+        <div class="sub-list">
+          <h3>Tasks List</h3>
+          <div id="tasksList"></div>
+        </div>
+        <div class="sub-list">
+          <h3>Leave Requests List</h3>
+          <div id="leavesList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let alertTimer = null;
+
+    function getHeaders() {
+      const key = localStorage.getItem("office_api_key") || "";
+      return {
+        "Content-Type": "application/json",
+        "X-API-Key": key
+      };
+    }
+
+    function setRecordsVisible(visible) {
+      document.getElementById("listsWrapper").style.display = visible ? "block" : "none";
+      document.getElementById("disconnectRecordsBtn").style.display = visible ? "inline-block" : "none";
+    }
+
+    function showCustomAlert(message, isError = false) {
+      const box = document.getElementById("customAlert");
+      const textEl = document.getElementById("customAlertText");
+      textEl.innerText = message;
+      box.className = isError ? "custom-alert error" : "custom-alert";
+      box.style.display = "flex";
+
+      if (alertTimer) clearTimeout(alertTimer);
+      alertTimer = setTimeout(() => {
+        hideCustomAlert();
+      }, 3000);
+    }
+
+    function hideCustomAlert() {
+      document.getElementById("customAlert").style.display = "none";
+    }
+
+    function openApiKeyModal() {
+      const saved = localStorage.getItem("office_api_key") || "";
+      document.getElementById("modalApiKeyInput").value = saved;
+      document.getElementById("apiKeyModal").style.display = "flex";
+      document.getElementById("modalApiKeyInput").focus();
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById("apiKeyModal").style.display = "none";
+    }
+
+    async function submitApiKeyModal() {
+      const val = document.getElementById("modalApiKeyInput").value.trim();
+      if (!val) {
+        showCustomAlert("Please enter a valid X-API-Key first.", true);
+        return;
+      }
+      localStorage.setItem("office_api_key", val);
+      closeApiKeyModal();
+      await loadAll(true);
+    }
+
+    function disconnectKey() {
+      localStorage.removeItem("office_api_key");
+      document.getElementById("tasksList").innerHTML = "";
+      document.getElementById("leavesList").innerHTML = "";
+      setRecordsVisible(false);
+      showCustomAlert("API Key disconnected.");
+    }
+
+    function setApiKeyInputHidden(hidden) {
+      const input = document.getElementById("modalApiKeyInput");
+      const icon = document.getElementById("eyeIcon");
+      input.type = hidden ? "password" : "text";
+      if (hidden) {
+        icon.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        `;
+      } else {
+        icon.innerHTML = `
+          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        `;
+      }
+    }
+
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById("modalApiKeyInput");
+      setApiKeyInputHidden(input.type === "text");
+    }
+
+    function openApiKeyModal() {
+      const saved = localStorage.getItem("office_api_key") || "";
+      document.getElementById("modalApiKeyInput").value = saved;
+      setApiKeyInputHidden(true);
+      document.getElementById("apiKeyModal").style.display = "flex";
+      document.getElementById("modalApiKeyInput").focus();
+    }
+
+
+    async function loadAll(showConnectAlert = false) {
+      const tasksOk = await loadTasks();
+      const leavesOk = await loadLeaves();
+      if (tasksOk && leavesOk) {
+        setRecordsVisible(true);
+        if (showConnectAlert) {
+          showCustomAlert("API Key connected successfully!");
+        }
+      } else {
+        setRecordsVisible(false);
+        if (showConnectAlert) {
+          showCustomAlert("Invalid X-API-Key. Connection failed.", true);
+        }
+      }
+    }
+
+    async function loadTasks() {
+      const res = await fetch("/tasks", { headers: getHeaders() });
+      if (!res.ok) return false;
+      const tasks = await res.json();
+      const container = document.getElementById("tasksList");
+      container.innerHTML = tasks.length === 0 ? "<p>No tasks found.</p>" : "";
+      tasks.forEach(t => {
+        container.innerHTML += `
+          <div class="item">
+            <div>
+              <strong>${t.title}</strong><br/>
+              <small>Assigned to: ${t.assignee}</small>
+              <span class="badge ${t.done ? 'done' : 'pending'}">${t.done ? 'Completed' : 'Pending'}</span>
+            </div>
+            <div class="actions">
+              <button class="btn btn-small" onclick="toggleTask(${t.id}, ${!t.done})">${t.done ? 'Undo' : 'Done'}</button>
+              <button class="btn btn-danger" onclick="deleteTask(${t.id})">Delete</button>
+            </div>
+          </div>`;
+      });
+      return true;
+    }
+
+    async function addTask() {
+      const title = document.getElementById("taskTitle").value.trim();
+      const assignee = document.getElementById("taskAssignee").value.trim();
+      if (!title || !assignee) return alert("Please enter both task title and assignee.");
+      const res = await fetch("/tasks", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ title, assignee, done: false })
+      });
+      if (!res.ok) return alert("Please connect a valid X-API-Key first.");
+      document.getElementById("taskTitle").value = "";
+      document.getElementById("taskAssignee").value = "";
+      if (document.getElementById("listsWrapper").style.display === "block") {
+        await loadAll(false);
+      }
+      showCustomAlert("Task added successfully!");
+    }
+
+    async function toggleTask(id, done) {
+      const res = await fetch(`/tasks/${id}`, {
+        method: "PATCH",
+        headers: getHeaders(),
+        body: JSON.stringify({ done })
+      });
+      if (res.ok) {
+        await loadAll(false);
+        showCustomAlert(done ? "Task marked as Done!" : "Task marked as Pending!");
+      }
+    }
+
+    async function deleteTask(id) {
+      const res = await fetch(`/tasks/${id}`, { method: "DELETE", headers: getHeaders() });
+      if (res.ok) {
+        await loadAll(false);
+        showCustomAlert("Task deleted successfully!");
+      }
+    }
+
+    async function loadLeaves() {
+      const res = await fetch("/leaves", { headers: getHeaders() });
+      if (!res.ok) return false;
+      const leaves = await res.json();
+      const container = document.getElementById("leavesList");
+      container.innerHTML = leaves.length === 0 ? "<p>No leave requests found.</p>" : "";
+      leaves.forEach(l => {
+        const cls = l.status.toLowerCase();
+        const isPending = l.status === "Pending";
+        const actionButtons = isPending
+          ? `<div class="actions">
+               <button class="btn btn-small" onclick="updateLeave(${l.id}, 'approve')">Approve</button>
+               <button class="btn btn-danger" onclick="updateLeave(${l.id}, 'reject')">Reject</button>
+             </div>`
+          : "";
+        container.innerHTML += `
+          <div class="item">
+            <div>
+              <strong>${l.employee_name}</strong> (${l.start_date} to ${l.end_date})<br/>
+              <small>${l.reason}</small>
+              <span class="badge ${cls}">${l.status}</span>
+            </div>
+            ${actionButtons}
+          </div>`;
+      });
+      return true;
+    }
+
+    async function applyLeave() {
+      const employee_name = document.getElementById("leaveEmp").value.trim();
+      const start_date = document.getElementById("leaveStart").value;
+      const end_date = document.getElementById("leaveEnd").value;
+      const reason = document.getElementById("leaveReason").value.trim();
+      if (!employee_name || !start_date || !end_date || !reason) {
+        return alert("Please fill in all leave request fields.");
+      }
+      const res = await fetch("/leaves", {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({ employee_name, start_date, end_date, reason })
+      });
+      if (!res.ok) return alert("Please connect a valid X-API-Key first.");
+      document.getElementById("leaveEmp").value = "";
+      document.getElementById("leaveReason").value = "";
+      if (document.getElementById("listsWrapper").style.display === "block") {
+        await loadAll(false);
+      }
+      showCustomAlert("Leave request submitted successfully!");
+    }
+
+    async function updateLeave(id, action) {
+      const res = await fetch(`/leaves/${id}/${action}`, {
+        method: "PATCH",
+        headers: getHeaders()
+      });
+      if (res.ok) {
+        await loadAll(false);
+        showCustomAlert(
+          action === "approve"
+            ? "Leave request approved successfully!"
+            : "Leave request rejected successfully!"
+        );
+      }
+    }
+
+    window.onload = () => {
+      setRecordsVisible(false);
+    };
+  </script>
+</body>
+</html>
